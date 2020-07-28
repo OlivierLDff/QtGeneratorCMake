@@ -1,0 +1,9 @@
+# File auto generated with CMake qt_generate_qmldir. Run CMake to regenerate if files changed.
+
+module My.Qrc.Prefix
+
+Bar 1.0 Bar.qml
+Foo 1.0 Foo.qml
+FooBar 1.0 FooBar.qml
+singleton FooSingleton 1.0 FooSingleton.qml
+singleton Icons 1.0 Icons.qml

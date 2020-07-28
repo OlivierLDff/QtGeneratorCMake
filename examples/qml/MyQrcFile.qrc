@@ -1,0 +1,12 @@
+<!-- File auto generated with CMake qt_generate_qrc. Everything written here will be lost. -->
+<RCC>
+  <qresource prefix="/My/Qrc/Prefix">
+    <file>Bar.qml</file>
+    <file>Foo.qml</file>
+    <file>FooBar.qml</file>
+    <file>FooSingleton.qml</file>
+    <file>Git_icon.svg</file>
+    <file>Icons.qml</file>
+    <file>Octicons-mark-github.svg</file>
+  </qresource>
+</RCC>
