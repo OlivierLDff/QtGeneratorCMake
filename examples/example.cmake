@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
 
-include(../GenerateQrc.cmake)
-include(../GenerateQrcAliasQtObject.cmake)
-include(../GenerateQmldir.cmake)
+include(../cmake/GenerateQrc.cmake)
+include(../cmake/GenerateQrcAliasQtObject.cmake)
+include(../cmake/GenerateQmldir.cmake)
 
 qt_generate_qrc_alias_qt_object(GENERATED_ALIAS_QML_FILENAME
   SOURCE_DIR qml
