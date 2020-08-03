@@ -1,21 +1,6 @@
 include(CMakeParseArguments)
 
-# Generate a qmldir file that embed every qml file inside a folder.
-#
-# Example:
-# qt_generate_qmldir(OUTPUT_QMLDIR_FILENAME
-#  SOURCE_DIR path/to/qml/folder
-#  MODULE "MyModule.Example")
-#
-# Usage:
-# qt_generate_qmldir(<var> [options...])
-#
-# VAR: Absolute path to the generated qrc file
-# - SOURCE_DIR: folder containing file to pack in qrc
-#               The file is also generated in that folder
-# - MODULE: Name of the module
-#
-function(qt_generate_qmldir VAR)
+function(__qt_generate_qmldir VAR)
 
   set(QT_QRC_OPTIONS VERBOSE)
   set(QT_QRC_ONE_VALUE_ARG SOURCE_DIR
@@ -40,34 +25,116 @@ function(qt_generate_qmldir VAR)
 
   file(GLOB RES_FILES ${ARGGEN_GLOB_EXPRESSION})
 
-  file(WRITE ${OUT_FILENAME_ABS}
-    "# File auto generated with CMake qt_generate_qmldir. Run CMake to regenerate if files changed.\n"
-    "\n"
-    "module ${ARGGEN_MODULE}\n\n")
+  if(RES_FILES)
 
-  foreach(RES_FILE ${RES_FILES})
+    file(WRITE ${OUT_FILENAME_ABS}
+      "# File auto generated with CMake qt_generate_qmldir. Run CMake to regenerate if files changed.\n"
+      "\n"
+      "module ${ARGGEN_MODULE}\n\n")
 
-    file(READ ${RES_FILE} QML_FILE_TXT)
-    string(FIND "${QML_FILE_TXT}" "pragma Singleton" MATCH_SINGLETON)
+    foreach(RES_FILE ${RES_FILES})
 
-    get_filename_component(FILENAME ${RES_FILE} NAME)
-    get_filename_component(FILENAME_WE ${RES_FILE} NAME_WE)
+      file(READ ${RES_FILE} QML_FILE_TXT)
+      string(FIND "${QML_FILE_TXT}" "pragma Singleton" MATCH_SINGLETON)
 
-    if(${MATCH_SINGLETON} EQUAL -1)
+      get_filename_component(FILENAME ${RES_FILE} NAME)
+      get_filename_component(FILENAME_WE ${RES_FILE} NAME_WE)
 
-      file(APPEND ${OUT_FILENAME_ABS} "${FILENAME_WE} 1.0 ${FILENAME}\n")
+      if(${MATCH_SINGLETON} EQUAL -1)
+
+        file(APPEND ${OUT_FILENAME_ABS} "${FILENAME_WE} 1.0 ${FILENAME}\n")
+        if(ARGGEN_VERBOSE)
+          message(STATUS "Add ${FILENAME} in ${OUT_FILENAME}")
+        endif()
+
+      else()
+
+        file(APPEND ${OUT_FILENAME_ABS} "singleton ${FILENAME_WE} 1.0 ${FILENAME}\n")
+        if(ARGGEN_VERBOSE)
+          message(STATUS "Add Singleton ${FILENAME} in ${OUT_FILENAME}")
+        endif()
+
+      endif()
+    endforeach()
+
+  endif()
+
+endfunction()
+
+# Generate a qmldir file that embed every qml file inside a folder.
+#
+# Example:
+# qt_generate_qmldir(OUTPUT_QMLDIR_FILENAMES
+#  SOURCE_DIR path/to/qml/folder
+#  MODULE "MyModule.Example"
+#  RECURSE
+#  VERBOSE)
+#
+# Usage:
+# qt_generate_qmldir(<var> [options...])
+#
+# VAR: Absolute path to the generated qrc file
+# - SOURCE_DIR: folder containing file to pack in qrc
+#               The file is also generated in that folder
+# - MODULE: Name of the module
+# - RECURSE: Generate a `qmldir` for every subdirectory too.
+# - VERBOSE: Dump useful information for developer.
+#
+function(qt_generate_qmldir VAR)
+
+  set(QT_QRC_OPTIONS RECURSE VERBOSE)
+  set(QT_QRC_ONE_VALUE_ARG SOURCE_DIR
+    MODULE
+    )
+  set(QT_QRC_MULTI_VALUE_ARG)
+
+  # parse the macro arguments
+  cmake_parse_arguments(ARGGEN "${QT_QRC_OPTIONS}" "${QT_QRC_ONE_VALUE_ARG}" "${QT_QRC_MULTI_VALUE_ARG}" ${ARGN})
+
+  # Create a list of every sub directories
+  file(GLOB_RECURSE RECURSE_FILES LIST_DIRECTORIES true "${ARGGEN_SOURCE_DIR}/*")
+
+  # And also append SOURCE_DIR
+  get_filename_component(SOURCE_DIR_ABS ${ARGGEN_SOURCE_DIR} ABSOLUTE)
+  list(APPEND RECURSE_FILES ${SOURCE_DIR_ABS})
+
+  foreach(DIR ${RECURSE_FILES})
+    if(IS_DIRECTORY "${DIR}")
+
       if(ARGGEN_VERBOSE)
-        message(STATUS "Add ${FILENAME} in ${OUT_FILENAME}")
+        message(STATUS "Generate qmldir for ${DIR}")
       endif()
 
-    else()
-
-      file(APPEND ${OUT_FILENAME_ABS} "singleton ${FILENAME_WE} 1.0 ${FILENAME}\n")
-      if(ARGGEN_VERBOSE)
-        message(STATUS "Add Singleton ${FILENAME} in ${OUT_FILENAME}")
+      # Create module suffix from relative path between SOURCE_DIR and current DIR
+      file(RELATIVE_PATH REL_DIR_PATH "${SOURCE_DIR_ABS}" "${DIR}")
+      string(REPLACE "/" "." MODULE_SUFFIX "${REL_DIR_PATH}")
+      if(MODULE_SUFFIX)
+        set(MODULE_SUFFIX ".${MODULE_SUFFIX}")
       endif()
 
+      # Create arguments for __qt_generate_qmldir
+      if(ARGGEN_SOURCE_DIR)
+        set(SOURCE_DIR "SOURCE_DIR" "${DIR}")
+      endif()
+      if(ARGGEN_MODULE)
+        set(MODULE "MODULE" "${ARGGEN_MODULE}${MODULE_SUFFIX}")
+      endif()
+      if(ARGGEN_VERBOSE)
+        set(VERBOSE "VERBOSE")
+      endif()
+
+      # Call real implementation
+      __qt_generate_qmldir(OUTPUT_VAR
+        ${SOURCE_DIR}
+        ${MODULE}
+        ${VERBOSE})
+
+      # And keep track of output variable
+      list(APPEND OUTPUT_VARS ${OUTPUT_VAR})
     endif()
   endforeach()
+
+  # Copy all qmldir list to PARENT_SCOPE in variable VAR
+  set(${VAR} ${OUTPUT_VARS} PARENT_SCOPE)
 
 endfunction()

@@ -13,17 +13,22 @@ qt_generate_qrc(OUTPUT_QRC_FILENAME
  SOURCE_DIR path/to/qml/folder
  NAME MyQrcFile.qrc
  PREFIX "My/Qrc/Prefix"
- GLOB_EXPRESSION "*.svg;*.qml")
+ GLOB_EXPRESSION "*.svg;*.qml"
+ RECURSE
+ VERBOSE)
 ```
 
 Usage: `qt_generate_qrc(<var> [options...])`
 
-* **VAR**: Absolute path to the generated qrc file
+* **VAR**: Absolute path to the generated `qrc` file
 
 - **PREFIX**: qrc prefix for every file in folder. `<qresource prefix="/${PREFIX}">`
-- **SOURCE_DIR**: folder containing file to pack in qrc. The file is also generated in that folder.
-- **NAME**: Name of the file (should include .qrc extension, or whatever extension you want)
-- **GLOB_EXPRESSION**: Expression to filter which file are going to be embedded in the qrc.
+- **SOURCE_DIR**: folder containing file to pack in `qrc`. The file is also generated in that folder if `DEST_DIR` isn't specified.
+- **DEST_DIR**: folder that will contain the output `qrc` file. Default to `SOURCE_DIR` if not specified.
+- **NAME**: Name of the file (should include `.qrc` extension, or whatever extension you want)
+- **GLOB_EXPRESSION**: Expression to filter which files are going to be embedded in the `qrc`.
+- **RECURSE**: Also traverse subdirectory when generating `qrc` file.
+- **VERBOSE**: Dump useful information for developer.
 
 ## 🔨 Generate Qmldir
 
@@ -32,17 +37,21 @@ Generate a qmldir file that embed every qml file inside a folder.
 Example:
 
 ```cmake
-qt_generate_qmldir(OUTPUT_QMLDIR_FILENAME
+qt_generate_qmldir(OUTPUT_QMLDIR_FILENAMES
  SOURCE_DIR path/to/qml/folder
- MODULE "MyModule.Example")
+ MODULE "MyModule.Example"
+ RECURSE
+ VERBOSE)
 ```
 
 Usage : `qt_generate_qmldir(<var> [options...])`
 
-* **VAR**: Absolute path to the generated qrc file
+* **VAR**: Absolute path to the generated qrc file. This variable is a list if `RECURSE` is enabled.
 
-- **SOURCE_DIR**: folder containing file to pack in qrc. The file is also generated in that folder
-- **MODULE**: Name of the module
+- **SOURCE_DIR**: folder containing file to pack in qrc. The file is also generated in that folder if `DEST_DIR` isn't specified.
+- **MODULE**: Name of the module. 
+- **RECURSE**: Generate a `qmldir` for every subdirectory too.
+- **VERBOSE**: Dump useful information for developer.
 
 > You should call `qt_generate_qmldir` before `qt_generate_qrc` if you want the `qmldir` file to be embedded inside the `qrc` file.
 
