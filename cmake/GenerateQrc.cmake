@@ -24,7 +24,7 @@ include(CMakeParseArguments)
 #
 function(qt_generate_qrc VAR)
 
-  set(QT_QRC_OPTIONS VERBOSE RECURSE)
+  set(QT_QRC_OPTIONS VERBOSE RECURSE ALWAYS_OVERWRITE)
   set(QT_QRC_ONE_VALUE_ARG PREFIX
     SOURCE_DIR
     DEST_DIR
@@ -50,58 +50,64 @@ function(qt_generate_qrc VAR)
   # Set output variable
   set(${VAR} ${OUT_FILENAME_ABS} PARENT_SCOPE)
 
-  if(NOT ARGGEN_GLOB_EXPRESSION)
-    set(ARGGEN_GLOB_EXPRESSION "*")
-  endif()
+  if(ARGGEN_ALWAYS_OVERWRITE OR NOT EXISTS ${OUT_FILENAME_ABS})
 
-  list(TRANSFORM ARGGEN_GLOB_EXPRESSION PREPEND "${ARGGEN_SOURCE_DIR}/")
+    if(NOT ARGGEN_GLOB_EXPRESSION)
+      set(ARGGEN_GLOB_EXPRESSION "*")
+    endif()
 
-  if(ARGGEN_RECURSE)
-    set(FILE_GLOBBING GLOB_RECURSE)
+    list(TRANSFORM ARGGEN_GLOB_EXPRESSION PREPEND "${ARGGEN_SOURCE_DIR}/")
+
+    if(ARGGEN_RECURSE)
+      set(FILE_GLOBBING GLOB_RECURSE)
+    else()
+      set(FILE_GLOBBING GLOB)
+    endif()
+
+    file(${FILE_GLOBBING} RES_FILES
+      RELATIVE ${SOURCE_DIR_ABS}
+      LIST_DIRECTORIES false
+      ${ARGGEN_GLOB_EXPRESSION}
+    )
+
+    file(WRITE ${OUT_FILENAME_ABS}
+      "<!-- File auto generated with CMake qt_generate_qrc. Everything written here will be lost. -->\n"
+      "<RCC>\n"
+      "  <qresource prefix=\"/${ARGGEN_PREFIX}\">\n")
+
+    foreach(RES_FILE ${RES_FILES})
+      get_filename_component(FILENAME ${RES_FILE} NAME)
+      get_filename_component(FILENAME_EXT ${RES_FILE} LAST_EXT)
+      get_filename_component(FILENAME_DIR ${RES_FILE} DIRECTORY)
+      if(FILENAME_DIR)
+        set(FILENAME_DIR ${FILENAME_DIR}/)
+      endif()
+
+      # Get Relative filepath for alias in qrc
+      set(RES_FILE_ABS ${SOURCE_DIR_ABS}/${RES_FILE})
+      file(RELATIVE_PATH REL_FILE_PATH "${DEST_DIR_ABS}" "${RES_FILE_ABS}")
+
+      if(NOT FILENAME_EXT OR NOT ${FILENAME_EXT} STREQUAL ".qrc")
+
+        if(${REL_FILE_PATH} STREQUAL ${FILENAME_DIR}${FILENAME})
+          file(APPEND ${OUT_FILENAME_ABS} "    <file>${REL_FILE_PATH}</file>\n")
+        else()
+          file(APPEND ${OUT_FILENAME_ABS} "    <file alias=\"${FILENAME_DIR}${FILENAME}\">${REL_FILE_PATH}</file>\n")
+        endif()
+
+        if(ARGGEN_VERBOSE)
+          message(STATUS "Add ${FILENAME_DIR}${FILENAME} in ${ARGGEN_NAME}")
+        endif()
+
+      endif()
+    endforeach()
+
+    file(APPEND ${OUT_FILENAME_ABS}
+      "  </qresource>\n"
+      "</RCC>\n")
+
   else()
-    set(FILE_GLOBBING GLOB)
+    message(STATUS "${OUT_FILENAME_ABS} already generated, skip generation for faster cmake.")
   endif()
-
-  file(${FILE_GLOBBING} RES_FILES
-    RELATIVE ${SOURCE_DIR_ABS}
-    LIST_DIRECTORIES false
-    ${ARGGEN_GLOB_EXPRESSION}
-  )
-
-  file(WRITE ${OUT_FILENAME_ABS}
-    "<!-- File auto generated with CMake qt_generate_qrc. Everything written here will be lost. -->\n"
-    "<RCC>\n"
-    "  <qresource prefix=\"/${ARGGEN_PREFIX}\">\n")
-
-  foreach(RES_FILE ${RES_FILES})
-    get_filename_component(FILENAME ${RES_FILE} NAME)
-    get_filename_component(FILENAME_EXT ${RES_FILE} LAST_EXT)
-    get_filename_component(FILENAME_DIR ${RES_FILE} DIRECTORY)
-    if(FILENAME_DIR)
-      set(FILENAME_DIR ${FILENAME_DIR}/)
-    endif()
-
-    # Get Relative filepath for alias in qrc
-    set(RES_FILE_ABS ${SOURCE_DIR_ABS}/${RES_FILE})
-    file(RELATIVE_PATH REL_FILE_PATH "${DEST_DIR_ABS}" "${RES_FILE_ABS}")
-
-    if(NOT FILENAME_EXT OR NOT ${FILENAME_EXT} STREQUAL ".qrc")
-
-      if(${REL_FILE_PATH} STREQUAL ${FILENAME_DIR}${FILENAME})
-        file(APPEND ${OUT_FILENAME_ABS} "    <file>${REL_FILE_PATH}</file>\n")
-      else()
-        file(APPEND ${OUT_FILENAME_ABS} "    <file alias=\"${FILENAME_DIR}${FILENAME}\">${REL_FILE_PATH}</file>\n")
-      endif()
-
-      if(ARGGEN_VERBOSE)
-        message(STATUS "Add ${FILENAME_DIR}${FILENAME} in ${ARGGEN_NAME}")
-      endif()
-
-    endif()
-  endforeach()
-
-  file(APPEND ${OUT_FILENAME_ABS}
-    "  </qresource>\n"
-    "</RCC>\n")
 
 endfunction()

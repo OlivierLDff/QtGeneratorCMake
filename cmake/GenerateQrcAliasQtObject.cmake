@@ -23,7 +23,7 @@ include(CMakeParseArguments)
 #
 function(qt_generate_qrc_alias_qt_object VAR)
 
-  set(QT_QRC_OPTIONS SINGLETON)
+  set(QT_QRC_OPTIONS SINGLETON ALWAYS_OVERWRITE)
   set(QT_QRC_ONE_VALUE_ARG PREFIX
     SOURCE_DIR
     NAME
@@ -39,69 +39,75 @@ function(qt_generate_qrc_alias_qt_object VAR)
   # Set output variable
   set(${VAR} ${OUT_FILENAME_ABS} PARENT_SCOPE)
 
-  if(NOT ARGGEN_GLOB_EXPRESSION)
-    set(ARGGEN_GLOB_EXPRESSION "*")
-  endif()
+  if(ARGGEN_ALWAYS_OVERWRITE OR NOT EXISTS ${OUT_FILENAME_ABS})
 
-  list(TRANSFORM ARGGEN_GLOB_EXPRESSION PREPEND "${ARGGEN_SOURCE_DIR}/")
-
-  # Fetch file that are going to be turned into properties
-  file(GLOB RES_FILES ${ARGGEN_GLOB_EXPRESSION})
-
-  # Write Header
-  file(WRITE ${OUT_FILENAME_ABS}
-    "// File auto generated with CMake qt_generate_qrc_alias_singleton.\n"
-    "// Everything written here will be lost.\n\n")
-  if(ARGGEN_SINGLETON)
-  file(APPEND ${OUT_FILENAME_ABS}
-    "pragma Singleton\n\n")
-  endif()
-  file(APPEND ${OUT_FILENAME_ABS}
-    "import QtQml 2.0\n\n"
-    "QtObject\n"
-    "{\n")
-  set(QRC_PATH "qrc:/${ARGGEN_PREFIX}")
-
-  foreach(RES_FILE ${RES_FILES})
-    get_filename_component(FILENAME_WE ${RES_FILE} NAME_WE)
-    get_filename_component(FILENAME ${RES_FILE} NAME)
-    get_filename_component(FILENAME_EXT ${RES_FILE} LAST_EXT)
-
-    if(NOT ${FILENAME_EXT} STREQUAL ".qrc")
-
-      set(PROPERTY_NAME_LIST ${FILENAME_WE})
-      # Create a list
-      string(REGEX REPLACE "[_ -]" ";" PROPERTY_NAME_LIST ${PROPERTY_NAME_LIST})
-
-      set(PROPERTY_NAME "")
-
-      set(PROPERTY_WORD_INDEX 0)
-      foreach(PROPERTY_WORD ${PROPERTY_NAME_LIST})
-        if(PROPERTY_WORD_INDEX EQUAL 0)
-          string(SUBSTRING ${PROPERTY_WORD} 0 1 FIRST_LETTER)
-          string(TOLOWER ${FIRST_LETTER} FIRST_LETTER)
-          string(REGEX REPLACE "^.(.*)" "${FIRST_LETTER}\\1" PROPERTY_WORD "${PROPERTY_WORD}")
-        else()
-          string(SUBSTRING ${PROPERTY_WORD} 0 1 FIRST_LETTER)
-          string(TOUPPER ${FIRST_LETTER} FIRST_LETTER)
-          string(REGEX REPLACE "^.(.*)" "${FIRST_LETTER}\\1" PROPERTY_WORD "${PROPERTY_WORD}")
-        endif()
-        set(PROPERTY_NAME "${PROPERTY_NAME}${PROPERTY_WORD}")
-        math(EXPR PROPERTY_WORD_INDEX "${PROPERTY_WORD_INDEX}+1")
-      endforeach()
-
-      set(FORBIDDEN_PROPERTY_WORDS id index model modelData console do if in for let new try var case else enum eval null this true void with await break catch class const false super throw while yield delete export import public return static switch typeof default extends finally package private continue debugger function arguments interface protected implements instanceof)
-
-      if (${PROPERTY_NAME} IN_LIST FORBIDDEN_PROPERTY_WORDS)
-        set(PROPERTY_NAME ${PROPERTY_NAME}_)
-      endif()
-
-      file(APPEND ${OUT_FILENAME_ABS} "  "
-        "readonly property string ${PROPERTY_NAME}: "
-        "'${QRC_PATH}/${FILENAME}'\n")
+    if(NOT ARGGEN_GLOB_EXPRESSION)
+      set(ARGGEN_GLOB_EXPRESSION "*")
     endif()
-  endforeach()
 
-  file(APPEND ${OUT_FILENAME_ABS} "}\n")
+    list(TRANSFORM ARGGEN_GLOB_EXPRESSION PREPEND "${ARGGEN_SOURCE_DIR}/")
+
+    # Fetch file that are going to be turned into properties
+    file(GLOB RES_FILES ${ARGGEN_GLOB_EXPRESSION})
+
+    # Write Header
+    file(WRITE ${OUT_FILENAME_ABS}
+      "// File auto generated with CMake qt_generate_qrc_alias_singleton.\n"
+      "// Everything written here will be lost.\n\n")
+    if(ARGGEN_SINGLETON)
+    file(APPEND ${OUT_FILENAME_ABS}
+      "pragma Singleton\n\n")
+    endif()
+    file(APPEND ${OUT_FILENAME_ABS}
+      "import QtQml 2.0\n\n"
+      "QtObject\n"
+      "{\n")
+    set(QRC_PATH "qrc:/${ARGGEN_PREFIX}")
+
+    foreach(RES_FILE ${RES_FILES})
+      get_filename_component(FILENAME_WE ${RES_FILE} NAME_WE)
+      get_filename_component(FILENAME ${RES_FILE} NAME)
+      get_filename_component(FILENAME_EXT ${RES_FILE} LAST_EXT)
+
+      if(NOT ${FILENAME_EXT} STREQUAL ".qrc")
+
+        set(PROPERTY_NAME_LIST ${FILENAME_WE})
+        # Create a list
+        string(REGEX REPLACE "[_ -]" ";" PROPERTY_NAME_LIST ${PROPERTY_NAME_LIST})
+
+        set(PROPERTY_NAME "")
+
+        set(PROPERTY_WORD_INDEX 0)
+        foreach(PROPERTY_WORD ${PROPERTY_NAME_LIST})
+          if(PROPERTY_WORD_INDEX EQUAL 0)
+            string(SUBSTRING ${PROPERTY_WORD} 0 1 FIRST_LETTER)
+            string(TOLOWER ${FIRST_LETTER} FIRST_LETTER)
+            string(REGEX REPLACE "^.(.*)" "${FIRST_LETTER}\\1" PROPERTY_WORD "${PROPERTY_WORD}")
+          else()
+            string(SUBSTRING ${PROPERTY_WORD} 0 1 FIRST_LETTER)
+            string(TOUPPER ${FIRST_LETTER} FIRST_LETTER)
+            string(REGEX REPLACE "^.(.*)" "${FIRST_LETTER}\\1" PROPERTY_WORD "${PROPERTY_WORD}")
+          endif()
+          set(PROPERTY_NAME "${PROPERTY_NAME}${PROPERTY_WORD}")
+          math(EXPR PROPERTY_WORD_INDEX "${PROPERTY_WORD_INDEX}+1")
+        endforeach()
+
+        set(FORBIDDEN_PROPERTY_WORDS id index model modelData console do if in for let new try var case else enum eval null this true void with await break catch class const false super throw while yield delete export import public return static switch typeof default extends finally package private continue debugger function arguments interface protected implements instanceof)
+
+        if (${PROPERTY_NAME} IN_LIST FORBIDDEN_PROPERTY_WORDS)
+          set(PROPERTY_NAME ${PROPERTY_NAME}_)
+        endif()
+
+        file(APPEND ${OUT_FILENAME_ABS} "  "
+          "readonly property string ${PROPERTY_NAME}: "
+          "'${QRC_PATH}/${FILENAME}'\n")
+      endif()
+    endforeach()
+
+    file(APPEND ${OUT_FILENAME_ABS} "}\n")
+
+  else()
+    message(STATUS "${OUT_FILENAME_ABS} already generated, skip generation for faster cmake.")
+  endif() # EXISTS OUT_FILENAME_ABS
 
 endfunction()
