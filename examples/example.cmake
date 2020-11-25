@@ -13,6 +13,7 @@ qt_generate_qrc_alias_qt_object(GENERATED_ALIAS_QML_FILENAME
   PREFIX "My/Qrc/Prefix"
   GLOB_EXPRESSION "*.svg"
   SINGLETON
+  ALWAYS_OVERWRITE
   VERBOSE)
 message(STATUS "GENERATED_ALIAS_QML_FILENAME : ${GENERATED_ALIAS_QML_FILENAME}")
 
@@ -20,6 +21,7 @@ message(STATUS "qt_generate_qmldir non recursive")
 qt_generate_qmldir(OUTPUT_QMLDIR_FILENAME
   SOURCE_DIR qml
   MODULE "My.Qrc.Prefix"
+  ALWAYS_OVERWRITE
   VERBOSE)
 message(STATUS "OUTPUT_QMLDIR_FILENAME : ${OUTPUT_QMLDIR_FILENAME}")
 
@@ -29,6 +31,7 @@ qt_generate_qrc(OUTPUT_QRC_FILENAME
   NAME MyQrcFile.qrc
   PREFIX "My/Qrc/Prefix"
   GLOB_EXPRESSION "*.svg;*.qml"
+  ALWAYS_OVERWRITE
   VERBOSE)
 message(STATUS "OUTPUT_QRC_FILENAME : ${OUTPUT_QRC_FILENAME}")
 

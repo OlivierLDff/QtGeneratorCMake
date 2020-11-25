@@ -50,15 +50,16 @@ function(qt_generate_qrc_alias_qt_object VAR)
     # Fetch file that are going to be turned into properties
     file(GLOB RES_FILES ${ARGGEN_GLOB_EXPRESSION})
 
+    set(OUT_CONTENT "")
     # Write Header
-    file(WRITE ${OUT_FILENAME_ABS}
+    string(APPEND OUT_CONTENT
       "// File auto generated with CMake qt_generate_qrc_alias_singleton.\n"
       "// Everything written here will be lost.\n\n")
     if(ARGGEN_SINGLETON)
-    file(APPEND ${OUT_FILENAME_ABS}
+    string(APPEND OUT_CONTENT
       "pragma Singleton\n\n")
     endif()
-    file(APPEND ${OUT_FILENAME_ABS}
+    string(APPEND OUT_CONTENT
       "import QtQml 2.0\n\n"
       "QtObject\n"
       "{\n")
@@ -98,13 +99,19 @@ function(qt_generate_qrc_alias_qt_object VAR)
           set(PROPERTY_NAME ${PROPERTY_NAME}_)
         endif()
 
-        file(APPEND ${OUT_FILENAME_ABS} "  "
+        string(APPEND OUT_CONTENT
+          "  "
           "readonly property string ${PROPERTY_NAME}: "
           "'${QRC_PATH}/${FILENAME}'\n")
       endif()
     endforeach()
 
-    file(APPEND ${OUT_FILENAME_ABS} "}\n")
+    string(APPEND OUT_CONTENT  "}\n")
+
+    # Write file to temp then copy to original if there are diff
+    file(WRITE ${OUT_FILENAME_ABS}.temp ${OUT_CONTENT})
+    execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${OUT_FILENAME_ABS}.temp ${OUT_FILENAME_ABS})
+    file(REMOVE ${OUT_FILENAME_ABS}.temp)
 
   else()
     message(STATUS "${OUT_FILENAME_ABS} already generated, skip generation for faster cmake.")

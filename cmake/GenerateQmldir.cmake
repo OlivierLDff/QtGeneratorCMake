@@ -2,11 +2,15 @@ include(CMakeParseArguments)
 
 function(__qt_generate_qmldir VAR)
 
-  set(QT_QRC_OPTIONS VERBOSE)
-  set(QT_QRC_ONE_VALUE_ARG SOURCE_DIR
+  set(QT_QRC_OPTIONS
+    VERBOSE
+  )
+  set(QT_QRC_ONE_VALUE_ARG
+    SOURCE_DIR
     MODULE
-    )
-  set(QT_QRC_MULTI_VALUE_ARG)
+  )
+  set(QT_QRC_MULTI_VALUE_ARG
+  )
 
   # parse the macro arguments
   cmake_parse_arguments(ARGGEN "${QT_QRC_OPTIONS}" "${QT_QRC_ONE_VALUE_ARG}" "${QT_QRC_MULTI_VALUE_ARG}" ${ARGN})
@@ -27,7 +31,9 @@ function(__qt_generate_qmldir VAR)
 
   if(RES_FILES)
 
-    file(WRITE ${OUT_FILENAME_ABS}
+    set(OUT_CONTENT "")
+
+    string(APPEND OUT_CONTENT
       "# File auto generated with CMake qt_generate_qmldir. Run CMake to regenerate if files changed.\n"
       "\n"
       "module ${ARGGEN_MODULE}\n\n")
@@ -42,20 +48,25 @@ function(__qt_generate_qmldir VAR)
 
       if(${MATCH_SINGLETON} EQUAL -1)
 
-        file(APPEND ${OUT_FILENAME_ABS} "${FILENAME_WE} 1.0 ${FILENAME}\n")
+        string(APPEND OUT_CONTENT "${FILENAME_WE} 1.0 ${FILENAME}\n")
         if(ARGGEN_VERBOSE)
           message(STATUS "Add ${FILENAME} in ${OUT_FILENAME}")
         endif()
 
       else()
 
-        file(APPEND ${OUT_FILENAME_ABS} "singleton ${FILENAME_WE} 1.0 ${FILENAME}\n")
+        string(APPEND OUT_CONTENT "singleton ${FILENAME_WE} 1.0 ${FILENAME}\n")
         if(ARGGEN_VERBOSE)
           message(STATUS "Add Singleton ${FILENAME} in ${OUT_FILENAME}")
         endif()
 
       endif()
     endforeach()
+
+    # Write file to temp then copy to original if there are diff
+    file(WRITE ${OUT_FILENAME_ABS}.temp ${OUT_CONTENT})
+    execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${OUT_FILENAME_ABS}.temp ${OUT_FILENAME_ABS})
+    file(REMOVE ${OUT_FILENAME_ABS}.temp)
 
   endif()
 

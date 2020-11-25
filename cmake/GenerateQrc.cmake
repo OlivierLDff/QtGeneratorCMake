@@ -70,10 +70,13 @@ function(qt_generate_qrc VAR)
       ${ARGGEN_GLOB_EXPRESSION}
     )
 
-    file(WRITE ${OUT_FILENAME_ABS}
+    set(OUT_CONTENT "")
+
+    string(APPEND OUT_CONTENT
       "<!-- File auto generated with CMake qt_generate_qrc. Everything written here will be lost. -->\n"
       "<RCC>\n"
-      "  <qresource prefix=\"/${ARGGEN_PREFIX}\">\n")
+      "  <qresource prefix=\"/${ARGGEN_PREFIX}\">\n"
+    )
 
     foreach(RES_FILE ${RES_FILES})
       get_filename_component(FILENAME ${RES_FILE} NAME)
@@ -90,9 +93,9 @@ function(qt_generate_qrc VAR)
       if(NOT FILENAME_EXT OR NOT ${FILENAME_EXT} STREQUAL ".qrc")
 
         if(${REL_FILE_PATH} STREQUAL ${FILENAME_DIR}${FILENAME})
-          file(APPEND ${OUT_FILENAME_ABS} "    <file>${REL_FILE_PATH}</file>\n")
+          string(APPEND OUT_CONTENT "    <file>${REL_FILE_PATH}</file>\n")
         else()
-          file(APPEND ${OUT_FILENAME_ABS} "    <file alias=\"${FILENAME_DIR}${FILENAME}\">${REL_FILE_PATH}</file>\n")
+          string(APPEND OUT_CONTENT "    <file alias=\"${FILENAME_DIR}${FILENAME}\">${REL_FILE_PATH}</file>\n")
         endif()
 
         if(ARGGEN_VERBOSE)
@@ -102,9 +105,13 @@ function(qt_generate_qrc VAR)
       endif()
     endforeach()
 
-    file(APPEND ${OUT_FILENAME_ABS}
+    string(APPEND OUT_CONTENT
       "  </qresource>\n"
       "</RCC>\n")
+
+    file(WRITE ${OUT_FILENAME_ABS}.temp ${OUT_CONTENT})
+    execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${OUT_FILENAME_ABS}.temp ${OUT_FILENAME_ABS})
+    file(REMOVE ${OUT_FILENAME_ABS}.temp)
 
   else()
     message(STATUS "${OUT_FILENAME_ABS} already generated, skip generation for faster cmake.")
