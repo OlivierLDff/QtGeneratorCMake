@@ -15,7 +15,9 @@ qt_generate_qrc(OUTPUT_QRC_FILENAME
  PREFIX "My/Qrc/Prefix"
  GLOB_EXPRESSION "*.svg;*.qml"
  RECURSE
- VERBOSE)
+ ALWAYS_OVERWRITE
+ VERBOSE
+)
 ```
 
 Usage: `qt_generate_qrc(<var> [options...])`
@@ -28,6 +30,7 @@ Usage: `qt_generate_qrc(<var> [options...])`
 - **NAME**: Name of the file (should include `.qrc` extension, or whatever extension you want)
 - **GLOB_EXPRESSION**: Expression to filter which files are going to be embedded in the `qrc`.
 - **RECURSE**: Also traverse subdirectory when generating `qrc` file.
+- **ALWAYS_OVERWRITE**: By default qrc file is generated only if it doesn't exist. With this option, if force to rewrite qrc if it has changed.
 - **VERBOSE**: Dump useful information for developer.
 
 ## 🔨 Generate Qmldir
